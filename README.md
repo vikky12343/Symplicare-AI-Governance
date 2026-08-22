@@ -52,6 +52,38 @@ docker compose -f docker-compose.prod.yml up --build
 Brings up MongoDB, ClamAV, the API and nginx. Only nginx is published; the API
 is proxied at `/api` on the same origin so the session cookie stays first-party.
 
+### Deploying to Vercel
+
+Vercel builds and serves the **web app only**. `vercel.json` sets the root as
+the build context so `@cgi/core` compiles before the web app — building from
+inside `apps/web` alone fails, because the core package is a workspace
+dependency that has to be compiled first.
+
+**The API does not run on Vercel, and adapting it would break three things it
+relies on:** it is a long-lived Express process rather than a set of functions;
+a validated import is held in memory until it is committed, which needs the
+same process to answer both requests; and evidence files are written to disk.
+Run it as a container instead — `apps/api/Dockerfile` and
+`docker-compose.prod.yml` are set up for exactly that, on Render, Railway,
+Fly.io or any VM.
+
+Once the API has a hostname, add the proxy ahead of the SPA fallback in
+`vercel.json`:
+
+```json
+"rewrites": [
+  { "source": "/api/:path*", "destination": "https://your-api-host/api/:path*" },
+  { "source": "/((?!api/).*)", "destination": "/index.html" }
+]
+```
+
+The rewrite matters: it keeps the browser talking to one origin, so the session
+cookie stays first-party. Pointing the web app straight at another hostname
+would make it a third-party cookie, and current browsers drop those.
+
+Set `WEB_ORIGIN` on the API to the Vercel domain, or CORS will refuse the
+requests.
+
 ### Backups
 
 ```bash
