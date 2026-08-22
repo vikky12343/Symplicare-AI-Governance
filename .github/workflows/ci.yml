@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# The release gate from the product specification, as far as it can be
+# automated. The steps that cannot be — independent penetration testing, the
+# privacy review, production smoke tests — are tracked in RELEASE-GATE.md and
+# are deliberately not claimed here.
+jobs:
+  gate:
+    name: Release gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: platform/package-lock.json
+
+      - name: Install
+        working-directory: platform
+        run: npm ci
+
+      # ---- supply chain -------------------------------------------------
+      - name: Dependency scan
+        working-directory: platform
+        run: npm audit --audit-level=high
+
+      - name: Secret scan
+        working-directory: platform
+        run: node scripts/scan-secrets.mjs
+
+      # ---- static analysis ----------------------------------------------
+      - name: Build shared engine
+        working-directory: platform
+        run: npm run build -w @cgi/core
+
+      - name: Typecheck
+        working-directory: platform
+        run: npm run typecheck
+
+      - name: Lint
+        working-directory: platform
+        run: npx eslint . --max-warnings 20
+
+      # ---- tests ---------------------------------------------------------
+      # Covers the engine, and the API's authentication, RBAC, tenant
+      # isolation, IDOR, CSRF, upload, scanner and audit checks.
+      - name: Test
+        working-directory: platform
+        run: npm test
+
+      - name: Build
+        working-directory: platform
+        run: npm run build
+
+      # ---- backup and restore -------------------------------------------
+      # A backup nobody has restored is a hope, not a backup.
+      - name: Verify a backup restores
+        working-directory: platform
+        run: |
+          npm run seed
+          node scripts/backup.mjs dump --out /tmp/backups --uri "$MONGODB_URI"
+          node scripts/backup.mjs verify --from "$(ls -t /tmp/backups/*.json.gz | head -1)"
+        env:
+          MONGODB_URI: mongodb://localhost:27017
+
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ping:1}).ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5

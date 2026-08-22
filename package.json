@@ -1,0 +1,40 @@
+{
+  "name": "care-governance-platform",
+  "private": true,
+  "version": "0.1.0",
+  "description": "UK care-home quality and governance intelligence platform",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20.10"
+  },
+  "scripts": {
+    "build": "npm run build -w @cgi/core && npm run build -w @cgi/api && npm run build -w @cgi/web",
+    "dev": "npm-run-all2 --parallel dev:core dev:api dev:web",
+    "dev:core": "npm run dev -w @cgi/core",
+    "dev:api": "npm run dev -w @cgi/api",
+    "dev:web": "npm run dev -w @cgi/web",
+    "seed": "npm run seed -w @cgi/api",
+    "test": "npm run test -w @cgi/core && npm run test -w @cgi/api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "scan:secrets": "node scripts/scan-secrets.mjs",
+    "scan:deps": "npm audit --audit-level=high",
+    "backup": "node scripts/backup.mjs dump",
+    "backup:verify": "node scripts/backup.mjs verify",
+    "restore": "node scripts/backup.mjs restore",
+    "gate": "npm run scan:deps && npm run scan:secrets && npm run typecheck && npm run lint && npm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-security": "^3.0.1",
+    "npm-run-all2": "^7.0.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.67.0"
+  }
+}

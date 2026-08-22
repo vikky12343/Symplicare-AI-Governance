@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Symplicare AI">
+  <!--
+    Placeholder mark: the monogram tile this build has always shown.
+    Replace this one file with the supplied Symplicare logo and every place
+    the mark appears — the rail, both auth screens, the landing header and
+    footer, and the browser tab — picks it up. Nothing else needs editing.
+  -->
+  <rect width="64" height="64" rx="17" fill="#12B39A"/>
+  <text x="32" y="43" text-anchor="middle" font-family="'IBM Plex Mono', ui-monospace, monospace"
+        font-size="34" font-weight="600" fill="#FFFFFF">S</text>
+</svg>

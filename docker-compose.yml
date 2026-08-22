@@ -1,0 +1,22 @@
+# A real MongoDB for local development, for anyone who would rather not use the
+# in-process one. Start it, then set MONGODB_URI=mongodb://localhost:27017.
+#
+#   docker compose up -d
+#   MONGODB_URI=mongodb://localhost:27017 npm run seed
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongo-data:

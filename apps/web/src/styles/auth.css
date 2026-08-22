@@ -1,0 +1,342 @@
+/* ============================================================
+   auth.css — Sign in / Sign up split screens
+   Shares the landing design tokens; the right-hand panel is the
+   one light surface in the product, so its colours live here.
+   Both screens are sized to fit a 900px-tall window without
+   scrolling — an authentication form that needs scrolling reads
+   as a much longer job than it is.
+   ============================================================ */
+
+@import './landing.css';
+
+.cgauth {
+  --panel-ink:   #0B1F27;
+  --panel-text:  #5C7580;
+  --panel-line:  #E4EAEB;
+  --panel-field: #FAFCFC;
+
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 48% 52%;
+  background: #ffffff;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+@media (max-width: 1023px) { .cgauth { grid-template-columns: 1fr; } }
+/* The panel holds still; only the form column can ever move. */
+@media (min-width: 1024px) {
+  .cgauth { align-items: start; }
+  .cgauth > .cgauth-aside { position: sticky; top: 0; height: 100vh; }
+  .cgauth-main { min-height: 100vh; }
+}
+
+/* ── Left panel ───────────────────────────────────────────────── */
+.cgauth-aside {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--color-deep);
+  padding: 48px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  justify-content: space-between;
+  color: var(--color-text);
+}
+@media (max-width: 1279px) { .cgauth-aside { padding: 40px; } }
+@media (max-width: 1023px) { .cgauth-aside { padding: 32px 24px 40px; gap: var(--sp-5); } }
+
+.cgauth-aside-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.cgauth-aside-bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  /* Out of focus on purpose: the photograph sets the mood, the words
+     carry the meaning. Scaled up so the blur has no soft edge to show. */
+  filter: blur(4px) saturate(1.02) brightness(0.86);
+  transform: scale(1.08);
+}
+.cgauth-aside-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(105deg,
+      rgba(1,15,22,0.95) 0%,
+      rgba(1,15,22,0.82) 42%,
+      rgba(1,15,22,0.58) 76%,
+      rgba(1,15,22,0.50) 100%),
+    radial-gradient(ellipse 70% 60% at 12% 8%, rgba(24,182,174,0.16) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 92% 96%, rgba(24,182,174,0.08) 0%, transparent 70%);
+}
+.cgauth-aside > *:not(.cgauth-aside-bg) { position: relative; z-index: 1; }
+
+.cgauth-aside-title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(32px, 3vw, 46px);
+  line-height: 1.08;
+  letter-spacing: -0.028em;
+  margin: 0 0 var(--sp-4) 0;
+  max-width: 16ch;
+  text-wrap: balance;
+}
+.cgauth-aside-body {
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: #B6CBD1;
+  max-width: 44ch;
+  margin: 0;
+}
+
+.cgauth-points {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--sp-7);
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+.cgauth-point {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: var(--sp-4);
+  align-items: start;
+  padding: var(--sp-5) 0;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.cgauth-point:last-child { border-bottom: 0; }
+.cgauth-point-icon {
+  width: 36px; height: 36px;
+  border-radius: 9px;
+  background: rgba(24,182,174,0.10);
+  border: 1px solid var(--color-border-teal);
+  color: var(--color-primary);
+  display: flex; align-items: center; justify-content: center;
+}
+.cgauth-point-num {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+  color: var(--color-primary); margin-right: 9px;
+}
+.cgauth-point-title { font-size: 14px; font-weight: 600; color: var(--color-text); margin: 0 0 5px 0; letter-spacing: -0.005em; }
+.cgauth-point-desc  { font-size: 12.5px; line-height: 1.6; color: #93AEB5; margin: 0; max-width: 46ch; }
+
+.cgauth-disclaimer {
+  display: flex; gap: 10px; align-items: center;
+  font-size: 11px; line-height: 1.5; color: #6E888F;
+  max-width: 42ch;
+  margin: 0;
+}
+.cgauth-disclaimer svg { flex-shrink: 0; }
+
+/* ── Right panel ──────────────────────────────────────────────── */
+.cgauth-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 48px;
+  background: #ffffff;
+}
+@media (max-width: 1023px) { .cgauth-main { padding: 32px 20px 48px; } }
+
+.cgauth-form-wrap {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+.cgauth-form-wrap.wide { max-width: 520px; }
+
+/* Back to the homepage — part of the content block, not a control
+   floating in a corner. */
+.cgauth-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 600;
+  color: var(--panel-text);
+  background: none; border: 0;
+  padding: 0;
+  margin-bottom: 26px;
+  text-decoration: none; cursor: pointer;
+  transition: color 0.16s ease;
+}
+.cgauth-back svg { transition: transform 0.16s ease; }
+.cgauth-back:hover { color: var(--color-primary-dim); }
+.cgauth-back:hover svg { transform: translateX(-2px); }
+.cgauth-back:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; border-radius: 4px; }
+
+.cgauth-title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 38px;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  color: var(--panel-ink);
+  margin: 0 0 7px 0;
+}
+.cgauth-sub { font-size: 14px; color: var(--panel-text); margin: 0 0 26px 0; }
+
+.cgauth-field { display: block; margin-bottom: 15px; min-width: 0; }
+.cgauth-label {
+  display: block;
+  font-size: 12px; font-weight: 600;
+  letter-spacing: 0.005em;
+  color: #33505A;
+  margin-bottom: 6px;
+}
+.cgauth-input-wrap { position: relative; display: block; }
+.cgauth-input-wrap > svg.lead {
+  position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+  color: #95A9AE; pointer-events: none;
+}
+.cgauth input[type='text'],
+.cgauth input[type='email'],
+.cgauth input[type='password'] {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px 0 39px;
+  border: 1px solid var(--panel-line);
+  border-radius: 10px;
+  background: var(--panel-field);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--panel-ink);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.cgauth input[type='password'] { padding-right: 40px; }
+.cgauth input::placeholder { color: #A2B2B6; }
+.cgauth input:hover { border-color: #CFDADC; }
+.cgauth input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(24,182,174,0.15);
+  background: #fff;
+}
+.cgauth-reveal {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 0; border-radius: 7px;
+  color: #7D9298; cursor: pointer;
+}
+.cgauth-reveal:hover { color: var(--panel-ink); background: #F1F4F4; }
+
+.cgauth-error { font-size: 11.5px; color: #C0392B; margin: 5px 0 0; }
+.cgauth-alert {
+  border: 1px solid #F3C9C3;
+  background: #FDF3F1;
+  color: #A33A2C;
+  border-radius: 10px;
+  padding: 11px 13px;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.cgauth-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin: 2px 0 20px;
+  font-size: 13px;
+}
+.cgauth-check { display: flex; align-items: center; gap: 8px; color: var(--panel-text); cursor: pointer; }
+.cgauth-check input { accent-color: var(--color-primary-dim); width: 15px; height: 15px; }
+.cgauth-link { color: var(--color-primary-dim); font-weight: 600; text-decoration: none; }
+.cgauth-link:hover { text-decoration: underline; }
+
+.cgauth-submit {
+  width: 100%; height: 46px;
+  border: 0; border-radius: 10px;
+  background: var(--color-primary-dim);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 15px; font-weight: 600;
+  letter-spacing: 0.005em;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(14,127,130,0.22);
+  transition: background 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+}
+.cgauth-submit:hover:not(:disabled) {
+  background: #0C6E71;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(14,127,130,0.28);
+}
+.cgauth-submit:disabled { opacity: 0.6; cursor: progress; box-shadow: none; }
+
+.cgauth-divider {
+  display: flex; align-items: center; gap: 14px;
+  margin: 16px 0;
+  font-size: 12px; color: #9AACB1;
+}
+.cgauth-divider::before, .cgauth-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--panel-line);
+}
+
+.cgauth-sso {
+  width: 100%; height: 46px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  border: 1px solid var(--panel-line); border-radius: 10px;
+  background: #fff;
+  font-family: var(--font-sans); font-size: 14px; font-weight: 600;
+  color: var(--panel-ink);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.cgauth-sso:hover { background: #F7F9F9; border-color: #CFDADC; }
+
+.cgauth-switch { text-align: center; font-size: 13.5px; color: var(--panel-text); margin: 18px 0 0; }
+
+/* ── Sign-up specifics ────────────────────────────────────────── */
+/* Pairing the short fields keeps the form to five rows, which is what
+   lets the whole thing sit inside one screen. */
+.cgauth-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+@media (max-width: 479px) { .cgauth-pair { grid-template-columns: 1fr; } }
+
+.cgauth-rules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 1px 0 16px;
+  padding: 0;
+  list-style: none;
+}
+.cgauth-rules li {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11.5px;
+  color: var(--panel-text);
+  background: #F4F7F7;
+  border: 1px solid var(--panel-line);
+  border-radius: 100px;
+  padding: 4px 10px 4px 8px;
+  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+.cgauth-rules li svg { color: #BBC7C9; transition: color 0.2s ease; }
+.cgauth-rules li.met {
+  color: #10725B;
+  background: rgba(30,169,124,0.09);
+  border-color: rgba(30,169,124,0.28);
+}
+.cgauth-rules li.met svg { color: #1EA97C; }
+
+.cgauth-terms {
+  display: flex; gap: 10px; align-items: flex-start;
+  font-size: 13px; color: var(--panel-text);
+  margin: 0 0 18px;
+}
+.cgauth-terms input { accent-color: var(--color-primary-dim); width: 15px; height: 15px; margin-top: 2px; flex-shrink: 0; }
+
+/* ── Short windows ────────────────────────────────────────────── */
+/* A 720px-tall laptop is common. Tighten the rhythm rather than
+   let either column start scrolling. */
+@media (min-width: 1024px) and (max-height: 800px) {
+  .cgauth-aside { padding: 32px 48px; }
+  .cgauth-aside-title { font-size: clamp(28px, 2.5vw, 36px); margin-bottom: 12px; }
+  .cgauth-aside-body { font-size: 13.5px; line-height: 1.6; }
+  .cgauth-points { margin-top: 20px; }
+  .cgauth-point { padding: 14px 0; }
+  .cgauth-point-desc { font-size: 12px; }
+
+  .cgauth-main { padding: 24px 48px; }
+  .cgauth-back { margin-bottom: 18px; }
+  .cgauth-title { font-size: 32px; }
+  .cgauth-sub { margin-bottom: 20px; }
+  .cgauth-field { margin-bottom: 12px; }
+  .cgauth-divider { margin: 13px 0; }
+  .cgauth-switch { margin-top: 14px; }
+}

@@ -1,0 +1,20 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+
+# Local database and uploaded evidence — never committed.
+apps/api/.mongo-data/
+apps/api/.storage/
+.storage/
+.mongodb-binaries/
+
+# Screenshots and sample sheets produced by a walkthrough run. The generator
+# (scripts/make-sample-upload.mjs) is committed; its output is not.
+samples/
+
+# The original photography drop. Byte-identical to apps/web/public/images,
+# which is the copy the app actually serves — delete this line if you want the
+# source set in the repository too.
+/images/
