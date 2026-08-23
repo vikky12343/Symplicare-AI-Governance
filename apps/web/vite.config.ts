@@ -1,5 +1,13 @@
+/* Vite loads .env into import.meta.env for the application, but not into
+   process.env for this config file, so API_ORIGIN below would be ignored
+   without this. Development only — a built bundle contains no hostname at
+   all, because the browser calls /api on whatever origin served the page. */
+import 'dotenv/config';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+
+const apiOrigin = process.env.API_ORIGIN ?? 'http://localhost:4000';
+const isRemoteApi = !/^https?:\/\/(localhost|127\.0\.0\.1)(:|$)/.test(apiOrigin);
 
 export default defineConfig({
   plugins: [react()],
@@ -7,11 +15,19 @@ export default defineConfig({
     port: 5173,
     /* The API runs on its own origin. Proxying in development keeps cookies
        first-party, so the session behaves exactly as it will in production
-       behind a single hostname. */
+       behind a single hostname.
+
+       Point API_ORIGIN at a deployed API in apps/web/.env to develop the
+       front end against it:
+         API_ORIGIN=https://symplicare-ai-governance-backend.onrender.com */
     proxy: {
       '/api': {
-        target: process.env.API_ORIGIN ?? 'http://localhost:4000',
-        changeOrigin: false,
+        target: apiOrigin,
+        /* A remote host routes on the Host header — Render would not know
+           which service a request with "localhost:5173" belongs to. Left
+           alone for a local API so the origin stays exactly as it will be in
+           production, behind a single hostname. */
+        changeOrigin: isRemoteApi,
       },
     },
   },
