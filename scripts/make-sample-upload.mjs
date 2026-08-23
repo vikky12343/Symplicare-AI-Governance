@@ -31,6 +31,10 @@ const arg = (flag, fallback) => {
 const code = arg('--code', 'CH-01');
 const name = arg('--name', 'Sample House');
 const lastPeriod = arg('--period', '2026-08');
+/* How many months to write, ending at --period. The engine needs at least
+   four earlier periods before it will judge the latest one, so fewer than
+   five months produces a set that reads "insufficient data" throughout. */
+const count = Math.max(1, Math.min(12, Number(arg('--months', '12')) || 12));
 
 /** The twelve months ending at --period, oldest first. */
 function periods(end, count) {
@@ -42,7 +46,10 @@ function periods(end, count) {
   }
   return out;
 }
-const months = periods(lastPeriod, 12);
+const months = periods(lastPeriod, count);
+if (count < 5) {
+  console.warn(`${count} months is below the baseline minimum — expect "insufficient data" on every indicator.`);
+}
 
 /** Month-end, so reporting_period_end is a real date rather than a guess. */
 function endOf(period) {
@@ -98,7 +105,7 @@ function rowsFor(period) {
   for (const [id, values] of Object.entries(SERIES)) {
     const indicator = INDICATOR_BY_ID.get(id);
     if (!indicator) throw new Error(`${id} is not in the indicator library.`);
-    const value = values[months.indexOf(period)];
+    const value = values.slice(-months.length)[months.indexOf(period)];
     rows.push([
       `${period}-01`,
       endOf(period),
