@@ -109,9 +109,9 @@ export function SignUpPage() {
   return (
     <div className="cgauth">
       <AuthAside
-        title="Create your account and"
-        highlight="get started."
-        body="Start your journey to clearer governance and better outcomes for your homes."
+        title="Start your 30-day"
+        highlight="free trial."
+        body="Set up your governance workspace in a few minutes. No card required, and nothing is held back during the trial."
         points={POINTS}
         image="/images/gallery/22_care_manager_resident_indoor.jpg"
         imageAlt=""
@@ -121,7 +121,7 @@ export function SignUpPage() {
         <div className="cgauth-form-wrap wide">
           <BackHome />
           <h2 className="cgauth-title">Sign up</h2>
-          <p className="cgauth-sub">Create your governance workspace.</p>
+          <p className="cgauth-sub">Free for 30 days. No card required.</p>
 
           {message ? <div className="cgauth-alert" role="alert">{message}</div> : null}
 

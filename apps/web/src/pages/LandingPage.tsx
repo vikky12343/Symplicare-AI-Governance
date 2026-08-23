@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { BrandMark } from '../components/brand.js';
 import '../styles/landing.css';
@@ -48,25 +48,32 @@ export function LandingPage() {
       <SolutionSection />
       <LogosSection />
       <HowItWorksSection />
+      <PricingSection />
       <CtaSection />
       <SiteFooter />
     </main>
   );
 }
 
-/* ── Header ──────────────────────────────────────────────────── */
-const NAV: { label: string; href: string; menu?: boolean }[] = [
-  { label: 'Product', href: '#product', menu: true },
-  { label: 'Solutions', href: '#solutions', menu: true },
+/* ── Header ──────────────────────────────────────────────────────
+   Every item lands on a section that exists further down this page. Items
+   without somewhere real to go — a Resources library nobody has written, a
+   Solutions page that repeated the product section — are not listed, and no
+   item carries a dropdown caret unless it opens a dropdown. */
+const NAV: { label: string; href: string }[] = [
+  { label: 'The problem', href: '#challenges' },
+  { label: 'Product', href: '#product' },
   { label: 'How it works', href: '#how-it-works' },
-  { label: 'Features', href: '#features' },
-  { label: 'Resources', href: '#resources', menu: true },
-  { label: 'Company', href: '#company', menu: true },
   { label: 'Pricing', href: '#pricing' },
+  { label: 'Company', href: '#company' },
 ];
 
 function SiteHeader() {
   const ref = useRef<HTMLElement>(null);
+  /* Below 1200px the horizontal nav does not fit, so it moves into a panel.
+     Without this, a phone or a smaller laptop had no navigation at all. */
+  const [menuOpen, setMenuOpen] = useState(false);
+
   useEffect(() => {
     const fn = () => ref.current?.classList.toggle('scrolled', window.scrollY > 10);
     window.addEventListener('scroll', fn, { passive: true });
@@ -74,27 +81,64 @@ function SiteHeader() {
     return () => window.removeEventListener('scroll', fn);
   }, []);
 
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false); };
+    /* Widening the window past the breakpoint brings the bar back; a panel
+       left open over it would cover the page. */
+    const onResize = () => { if (window.innerWidth >= 1200) setMenuOpen(false); };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [menuOpen]);
+
   return (
-    <header ref={ref} className="land-header" role="banner">
+    <header ref={ref} className={`land-header${menuOpen ? ' menu-open' : ''}`} role="banner">
       <BrandMark size={34} stacked />
       <nav className="land-nav-desktop" aria-label="Primary">
         {NAV.map((n) => (
-          <a key={n.label} href={n.href}>
-            {n.label}
-            {n.menu ? (
-              <span className="land-nav-caret" aria-hidden="true">
-                <Icon size={11}><polyline points="6 9 12 15 18 9" /></Icon>
-              </span>
-            ) : null}
-          </a>
+          <a key={n.label} href={n.href}>{n.label}</a>
         ))}
       </nav>
       <div className="land-header-actions">
         <Link to="/sign-in" className="land-signin-link">Sign in</Link>
         <Link to="/sign-up" className="land-btn land-btn-primary" style={{ height: 36, padding: '0 16px', fontSize: 13 }}>
-          Request a demo
+          Start free trial
         </Link>
+        <button
+          type="button"
+          className="land-burger"
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={menuOpen}
+          aria-controls="land-mobile-nav"
+          onClick={() => setMenuOpen((v) => !v)}
+        >
+          <Icon size={20}>
+            {menuOpen
+              ? <path d="M6 6l12 12M18 6 6 18" />
+              : <path d="M4 7h16M4 12h16M4 17h16" />}
+          </Icon>
+        </button>
       </div>
+
+      <nav id="land-mobile-nav" className="land-nav-mobile" aria-label="Primary" hidden={!menuOpen}>
+        {NAV.map((n) => (
+          <a key={n.label} href={n.href} onClick={() => setMenuOpen(false)}>{n.label}</a>
+        ))}
+        <Link to="/sign-in" onClick={() => setMenuOpen(false)}>Sign in</Link>
+        {/* Under 576px the header drops its trial button for room, so the
+            panel has to carry it or the menu offers no way to sign up. */}
+        <Link
+          to="/sign-up"
+          className="land-btn land-btn-primary land-nav-mobile-cta"
+          onClick={() => setMenuOpen(false)}
+        >
+          Start your 30-day free trial
+        </Link>
+      </nav>
     </header>
   );
 }
@@ -132,7 +176,7 @@ function Hero() {
             and take action with confidence. All your data. One connected view.
           </p>
           <div className="land-hero-actions land-fade-up visible land-d2">
-            <Link to="/sign-up" className="land-btn land-btn-primary">Request a demo</Link>
+            <Link to="/sign-up" className="land-btn land-btn-primary">Start your 30-day free trial</Link>
             <a href="#how-it-works" className="land-btn land-btn-secondary">
               <Icon size={15}><circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" /></Icon>
               See how it works
@@ -267,7 +311,7 @@ const CHALLENGES = [
 function ChallengesSection() {
   const ref = useInView();
   return (
-    <section className="land-section" aria-labelledby="challenges-heading" id="product">
+    <section className="land-section" aria-labelledby="challenges-heading" id="challenges">
       <div className="land-container">
         <div ref={ref} className="land-fade-up land-section-header centered">
           <h2 id="challenges-heading" className="land-section-title">
@@ -314,7 +358,7 @@ const SOLUTION_FEATURES = [
 function SolutionSection() {
   const ref = useInView();
   return (
-    <section className="land-section-alt" aria-labelledby="solution-heading" id="solutions">
+    <section className="land-section-alt" aria-labelledby="solution-heading" id="product">
       <div className="land-container">
         <div ref={ref} className="land-solutions-layout land-fade-up">
           <div>
@@ -532,7 +576,7 @@ const LOGOS = [
 function LogosSection() {
   const ref = useInView();
   return (
-    <section className="land-logos" aria-labelledby="logos-heading" id="features">
+    <section className="land-logos" aria-labelledby="logos-heading" id="customers">
       <div className="land-container">
         <div ref={ref} className="land-fade-up">
           <p id="logos-heading" className="land-logos-title">Trusted by care leaders across the UK</p>
@@ -589,11 +633,60 @@ function HowItWorksSection() {
   );
 }
 
+/* ── Pricing ──────────────────────────────────────────────────────
+   Pricing is not set yet, so this section says so rather than inventing a
+   figure or showing three plans nobody has agreed. What it does state is
+   verifiable against the product: the trial runs 30 days, sign-up asks for no
+   payment details, and nothing in the service is held back during it. */
+function PricingSection() {
+  const ref = useInView();
+  return (
+    <section className="land-section" aria-labelledby="pricing-heading" id="pricing">
+      <div className="land-container">
+        <div ref={ref} className="land-fade-up land-section-header centered">
+          <div className="land-eyebrow">Pricing</div>
+          <h2 id="pricing-heading" className="land-section-title">
+            Start free for <span className="land-text-teal">30 days</span>
+          </h2>
+          <p className="land-section-body land-pricing-lede">
+            We are setting our pricing with the first care groups using the platform, so there is nothing to
+            quote yet. Start the trial now — you will know the price well before it ends, and there is nothing
+            to cancel if it is not for you.
+          </p>
+        </div>
+
+        <div className="land-pricing-card">
+          <ul className="land-pricing-list">
+            {TRIAL_INCLUDES.map((item) => (
+              <li key={item}>
+                <Icon size={14}><polyline points="20 6 9 17 4 12" /></Icon>
+                {item}
+              </li>
+            ))}
+          </ul>
+          <div className="land-pricing-actions">
+            <Link to="/sign-up" className="land-btn land-btn-primary">Start your 30-day free trial</Link>
+            <span className="land-pricing-fine">No card required</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const TRIAL_INCLUDES = [
+  'All fifteen governance indicators, with the definitions your data dictionary sets',
+  'Every care home you manage, under one organisation',
+  'Excel and CSV uploads, validated before anything is written',
+  'Signals, actions, governance reports and the evidence library',
+  'Your data stays yours — export or delete it at any point',
+];
+
 /* ── CTA ──────────────────────────────────────────────────────── */
 function CtaSection() {
   const ref = useInView();
   return (
-    <section className="land-cta" aria-labelledby="cta-heading" id="pricing">
+    <section className="land-cta" aria-labelledby="cta-heading">
       <div className="land-cta-bg-img" aria-hidden="true">
         <img src="/images/gallery/01_care_home_exterior.jpg" alt="" width="1440" height="420" loading="lazy" />
       </div>
@@ -605,7 +698,7 @@ function CtaSection() {
           </p>
         </div>
         <div className="land-cta-actions">
-          <Link to="/sign-up" className="land-btn land-btn-primary">Request a demo</Link>
+          <Link to="/sign-up" className="land-btn land-btn-primary">Start your 30-day free trial</Link>
           <a href="#how-it-works" className="land-btn land-btn-secondary">
             <Icon size={15}><circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" /></Icon>
             See how it works
@@ -616,13 +709,29 @@ function CtaSection() {
   );
 }
 
-/* ── Footer ───────────────────────────────────────────────────── */
-const FOOTER_COLS = [
-  { h: 'Product', links: ['Overview', 'Features', 'Integrations', 'Security', 'Updates'] },
-  { h: 'Solutions', links: ['Care Home Groups', 'Single Care Homes', 'Quality Teams', 'Registered Managers'] },
-  { h: 'Resources', links: ['Help Centre', 'Guides', 'Case Studies', 'Webinars', 'Blog'] },
-  { h: 'Company', links: ['About Us', 'Careers', 'Partners', 'News', 'Contact'] },
-  { h: 'Legal', links: ['Privacy Policy', 'Terms of Service', 'Data Processing', 'Security'] },
+/* ── Footer ───────────────────────────────────────────────────────
+   Every link here goes somewhere. The columns that used to list a Help
+   Centre, case studies, careers and a blog were twenty-three anchors pointing
+   at "#" — a footer that looks complete and does nothing is worse than a
+   short one, and on a governance product it is the wrong first impression.
+   Add a column back the day the page behind it exists. */
+const FOOTER_COLS: { h: string; links: { label: string; to: string }[] }[] = [
+  {
+    h: 'Product',
+    links: [
+      { label: 'The problem', to: '#challenges' },
+      { label: 'What it does', to: '#product' },
+      { label: 'How it works', to: '#how-it-works' },
+      { label: 'Pricing', to: '#pricing' },
+    ],
+  },
+  {
+    h: 'Get started',
+    links: [
+      { label: 'Start a free trial', to: '/sign-up' },
+      { label: 'Sign in', to: '/sign-in' },
+    ],
+  },
 ];
 
 function SiteFooter() {
@@ -637,23 +746,20 @@ function SiteFooter() {
               Clarity for stronger governance.<br />
               Better outcomes for residents.
             </p>
-            <div className="land-social">
-              <a href="#linkedin" aria-label="LinkedIn">
-                <Icon size={15}><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M7.5 10.5V17M7.5 7.5v.01M11.5 17v-3.6a2.4 2.4 0 0 1 4.8 0V17" /></Icon>
-              </a>
-              <a href="#x" aria-label="X">
-                <Icon size={15}><path d="M4 4l16 16M20 4 4 20" /></Icon>
-              </a>
-              <a href="#youtube" aria-label="YouTube">
-                <Icon size={15}><rect x="2.5" y="6" width="19" height="12" rx="3.5" /><polygon points="10.5 9.5 15 12 10.5 14.5" /></Icon>
-              </a>
-            </div>
           </div>
           {FOOTER_COLS.map((c) => (
-            <div key={c.h} id={c.h === 'Resources' ? 'resources' : undefined}>
+            <div key={c.h}>
               <h3 className="land-footer-heading">{c.h}</h3>
               <ul className="land-footer-links">
-                {c.links.map((l) => <li key={l}><a href="#">{l}</a></li>)}
+                {c.links.map((l) => (
+                  <li key={l.label}>
+                    {/* An in-page anchor stays an anchor; a route goes through
+                        the router, so it does not reload the application. */}
+                    {l.to.startsWith('#')
+                      ? <a href={l.to}>{l.label}</a>
+                      : <Link to={l.to}>{l.label}</Link>}
+                  </li>
+                ))}
               </ul>
             </div>
           ))}
