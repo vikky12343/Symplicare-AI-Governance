@@ -81,7 +81,7 @@ Render → your service → **Environment**. Copy the left column exactly.
 | Key | Value |
 | --- | --- |
 | `NODE_ENV` | `production` |
-| `NODE_VERSION` | `22` |
+| `NODE_VERSION` | `22` — also pinned by `.node-version`, so this is belt and braces |
 | `MONGODB_URI` | *by hand* — your Atlas string. Copy the `MONGODB_URI=` line out of `apps/api/.env`, or take a fresh one from Atlas → Connect → Drivers |
 | `MONGODB_DB` | `care_governance` |
 | `SESSION_SECRET` | *by hand* — generate one, see below |
@@ -141,8 +141,9 @@ same repository, then:
 | Build Command | `npm ci && npm run build -w @cgi/core && npm run build -w @cgi/web` |
 | Publish Directory | `apps/web/dist` |
 
-One environment variable, `NODE_VERSION` = `22`, and it only affects the
-build. There is nothing else to set: the web app reads no environment at all —
+No environment variables at all. The Node version is pinned by
+`.node-version` at the repository root, which Render and Vercel both read, so
+there is nothing to set in the dashboard: the web app reads no environment at all —
 no `VITE_*`, no API base URL — because it calls `/api` on its own origin and
 the rewrite below decides where that goes. Nothing secret belongs here either;
 a static site's variables are compiled into JavaScript every visitor
