@@ -4,7 +4,7 @@ import { BrandMark } from './brand.js';
 
 /* ── Small line icons ─────────────────────────────────────────── */
 const stroke = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
-
+/* This is good */
 export function MailIcon() {
   return (
     <svg className="lead" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" {...stroke}>
