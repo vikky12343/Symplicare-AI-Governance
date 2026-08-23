@@ -27,15 +27,22 @@ services:
         value: production
       - key: NODE_VERSION
         value: "22"
-      # Render provides PORT; the API reads it.
+      # PORT is not listed: Render assigns one and the API reads it.
+      # Set in the dashboard — a credential never belongs in a repository.
       - key: MONGODB_URI
-        sync: false          # set in the dashboard — never in the repository
+        sync: false
       - key: MONGODB_DB
         value: care_governance
+      # Render generates one and keeps it. Nothing to paste, nothing to leak,
+      # and it is not the value that has been sitting in a local .env file.
       - key: SESSION_SECRET
-        generateValue: true  # Render generates and stores it
+        generateValue: true
+      # The site allowed to call this API. A public URL, so it lives here
+      # rather than in the dashboard. CORS refuses every other origin, scheme
+      # included and no trailing slash. Add more comma-separated if you put
+      # the web app on Vercel as well.
       - key: WEB_ORIGIN
-        sync: false          # the Vercel URL, e.g. https://your-app.vercel.app
+        value: https://symplicare-ai-governance-frontend.onrender.com
       - key: MAX_UPLOAD_BYTES
         value: "5242880"
       - key: LOG_LEVEL
@@ -44,11 +51,11 @@ services:
       # written to the instance filesystem, which is wiped on every deploy.
       - key: STORAGE_DIR
         value: /var/data/evidence
-      # Malware scanning. The API refuses to start in production on the
-      # placeholder scanner unless the risk is accepted deliberately, so this
-      # has to be set by hand:
-      #   CLAMAV_HOST=<host of a clamd instance>   (what production wants)
-      #   SCANNER=heuristic-accepted-risk          (accepting the placeholder)
+      # Malware scanning. Deliberately left for the dashboard: the API refuses
+      # to start in production on the placeholder scanner, and the point of
+      # that refusal is that a person accepts it, not that a file does.
+      #   CLAMAV_HOST=<host of a clamd instance>   what production wants
+      #   SCANNER=heuristic-accepted-risk          accepting the placeholder
       - key: SCANNER
         sync: false
     disk:

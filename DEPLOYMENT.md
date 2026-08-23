@@ -85,7 +85,7 @@ Render → your service → **Environment**. Copy the left column exactly.
 | `MONGODB_URI` | *by hand* — your Atlas string. Copy the `MONGODB_URI=` line out of `apps/api/.env`, or take a fresh one from Atlas → Connect → Drivers |
 | `MONGODB_DB` | `care_governance` |
 | `SESSION_SECRET` | *by hand* — generate one, see below |
-| `WEB_ORIGIN` | *by hand* — the web app's URL. Fill this in at step 4, once you have it |
+| `WEB_ORIGIN` | `https://symplicare-ai-governance-frontend.onrender.com` — the site's URL, scheme included, no trailing slash |
 | `MAX_UPLOAD_BYTES` | `5242880` |
 | `LOG_LEVEL` | `info` |
 | `STORAGE_DIR` | `/var/data/evidence` |
@@ -141,7 +141,12 @@ same repository, then:
 | Build Command | `npm ci && npm run build -w @cgi/core && npm run build -w @cgi/web` |
 | Publish Directory | `apps/web/dist` |
 
-Add one environment variable, `NODE_VERSION` = `22`.
+One environment variable, `NODE_VERSION` = `22`, and it only affects the
+build. There is nothing else to set: the web app reads no environment at all —
+no `VITE_*`, no API base URL — because it calls `/api` on its own origin and
+the rewrite below decides where that goes. Nothing secret belongs here either;
+a static site's variables are compiled into JavaScript every visitor
+downloads.
 
 Then **Redirects/Rewrites**, in this order — the first match wins, so the API
 rule has to come first or every `/api` call is answered with the application's
