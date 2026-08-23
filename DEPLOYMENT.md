@@ -149,12 +149,16 @@ own `index.html`:
 
 | Source | Destination | Action |
 | --- | --- | --- |
-| `/api/*` | `https://symplicare-api.onrender.com/api/*` | Rewrite |
+| `/api/*` | `https://symplicare-ai-governance-backend.onrender.com/api/*` | Rewrite |
 | `/*` | `/index.html` | Rewrite |
 
-Replace that hostname with your API service's actual address. The second rule
-is what makes client-side routing work: without it, opening
-`/dashboard` directly returns a 404 instead of the app.
+Both must be **Rewrite**, never Redirect: a redirect changes the browser's URL
+to the API hostname, and a `sameSite: strict` cookie stops coming back from
+there — sign-in appears to work and then every page says signed out.
+
+The second rule is what makes client-side routing work. Without it the site
+loads from the home page and every deep link — `/sign-in`, `/dashboard` — is a
+404, including on refresh.
 
 There is nothing else to set. The web app holds no secrets — it talks to
 `/api` on its own origin and the browser holds the session cookie.
@@ -188,28 +192,28 @@ talks to `/api` on its own origin and the browser holds the session cookie.
 You now have two URLs. Say they are:
 
 ```
-API   https://symplicare-api.onrender.com
-Web   https://symplicare-web.onrender.com          (or …vercel.app)
+API   https://symplicare-ai-governance-backend.onrender.com
+Web   https://symplicare-ai-governance-frontend.onrender.com          (or …vercel.app)
 ```
 
 **a. Tell the API which site may call it.** Render → *symplicare-api* →
 Environment →
 
 ```
-WEB_ORIGIN = https://symplicare-web.onrender.com
+WEB_ORIGIN = https://symplicare-ai-governance-frontend.onrender.com
 ```
 
 CORS refuses every other origin. Scheme included, no trailing slash. If you
 also want Vercel preview deployments to work, list them comma-separated:
 
 ```
-WEB_ORIGIN = https://symplicare-web.onrender.com,https://symplicare-ai-governance.vercel.app
+WEB_ORIGIN = https://symplicare-ai-governance-frontend.onrender.com,https://symplicare-ai-governance.vercel.app
 ```
 
 **b. Tell the site where the API is.**
 
 *On Render:* the static site → **Redirects/Rewrites** → the `/api/*` rule →
-set the destination to `https://symplicare-api.onrender.com/api/*`. Save, then
+set the destination to `https://symplicare-ai-governance-backend.onrender.com/api/*`. Save, then
 redeploy the static site. (If you used the blueprint, edit the destination in
 `render.yaml` and push instead — that keeps the file and the dashboard
 agreeing.)
@@ -219,7 +223,7 @@ because the first match wins:
 
 ```json
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://symplicare-api.onrender.com/api/:path*" },
+    { "source": "/api/:path*", "destination": "https://symplicare-ai-governance-backend.onrender.com/api/:path*" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 ```
@@ -235,11 +239,11 @@ Vercel redeploys on the push.
 ## 5. Check it works
 
 ```bash
-curl https://symplicare-api.onrender.com/api/health
+curl https://symplicare-ai-governance-backend.onrender.com/api/health
 ```
 
 ```bash
-curl https://symplicare-web.onrender.com/api/health
+curl https://symplicare-ai-governance-frontend.onrender.com/api/health
 ```
 
 Both must return the same JSON. The first proves the API is up; the second
