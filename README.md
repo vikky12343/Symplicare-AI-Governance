@@ -52,6 +52,12 @@ docker compose -f docker-compose.prod.yml up --build
 Brings up MongoDB, ClamAV, the API and nginx. Only nginx is published; the API
 is proxied at `/api` on the same origin so the session cookie stays first-party.
 
+### Deploying
+
+`DEPLOYMENT.md` is the step-by-step: Atlas network access, the API on Render,
+the web app on Vercel, and the rewrite that joins them. The two sections below
+are the summary.
+
 ### Deploying to Vercel
 
 Vercel builds and serves the **web app only**. `vercel.json` sets the root as
