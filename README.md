@@ -84,6 +84,39 @@ would make it a third-party cookie, and current browsers drop those.
 Set `WEB_ORIGIN` on the API to the Vercel domain, or CORS will refuse the
 requests.
 
+### Deploying the API to Render
+
+`render.yaml` is a blueprint — point Render at it (Blueprints → New Blueprint
+Instance) rather than filling the fields in by hand, so the build and start
+commands cannot drift from the repository.
+
+It sets the two things that matter:
+
+```
+build:  npm ci && npm run build -w @cgi/core && npm run build -w @cgi/api
+start:  node apps/api/dist/index.js
+```
+
+`@cgi/core` is a workspace package the API imports, so it has to be compiled
+first, and the API has to be compiled before it is started. Starting the
+TypeScript sources with `tsx` in production is what produces
+`Cannot find module '@cgi/core/dist/index.js'`. Compiling core is also wired
+into `npm install` now, through a `prepare` script on the package, so an
+install alone is enough to make the module resolve.
+
+Three settings have to be filled in by hand, because they are decisions rather
+than defaults:
+
+- `MONGODB_URI` — the Atlas connection string.
+- `WEB_ORIGIN` — the Vercel URL. CORS refuses everything else.
+- `SCANNER` or `CLAMAV_HOST` — the API refuses to start in production on the
+  placeholder scanner. Point `CLAMAV_HOST` at a clamd instance, or accept the
+  placeholder deliberately with `SCANNER=heuristic-accepted-risk`.
+
+The blueprint mounts a disk and points `STORAGE_DIR` at it. Without one,
+evidence files are written to the instance filesystem and every deploy
+discards them.
+
 ### Backups
 
 ```bash

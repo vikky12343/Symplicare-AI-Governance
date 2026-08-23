@@ -22,6 +22,14 @@ const schema = z.object({
   /** Uploads. The ceiling is enforced before the file is parsed. */
   MAX_UPLOAD_BYTES: z.coerce.number().int().positive().default(5 * 1024 * 1024),
 
+  /**
+   * Where evidence files are written. Defaults to .storage beside the working
+   * directory, which is right for development and for the container image.
+   * On a host with an ephemeral filesystem this must point at mounted
+   * persistent storage, or every deploy silently discards the evidence.
+   */
+  STORAGE_DIR: z.string().min(1).optional(),
+
   /** Malware scanning. Set CLAMAV_HOST to a clamd instance for production. */
   CLAMAV_HOST: z.string().min(1).optional(),
   CLAMAV_PORT: z.coerce.number().int().positive().default(3310),

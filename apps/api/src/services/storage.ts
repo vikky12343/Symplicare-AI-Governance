@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve, sep } from 'node:path';
+import { env } from '../env.js';
 
 /**
  * Object storage.
@@ -9,7 +10,9 @@ import { dirname, join, resolve, sep } from 'node:path';
  * caller and are never derived from a user-supplied filename.
  */
 
-const ROOT = resolve(process.cwd(), '.storage');
+/* STORAGE_DIR points this at a mounted volume where the local filesystem does
+   not survive a deploy. Unset, it behaves as it always has. */
+const ROOT = resolve(env.STORAGE_DIR ?? join(process.cwd(), '.storage'));
 
 /** Refuses any key that would escape the storage root. */
 function pathFor(key: string): string {

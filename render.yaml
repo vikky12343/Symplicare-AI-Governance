@@ -1,0 +1,53 @@
+# Render blueprint for the API.
+#
+# The web app is served from Vercel (see vercel.json); this is the other half.
+# Point Render at this file — Blueprints → New Blueprint Instance — rather than
+# filling the fields in by hand, so the build and start commands cannot drift
+# apart from the repository.
+services:
+  - type: web
+    name: symplicare-api
+    runtime: node
+    plan: starter
+    region: frankfurt
+    branch: main
+    healthCheckPath: /api/health
+    # @cgi/core is a workspace package the API imports. It has to be compiled
+    # before the API is compiled, and the API has to be compiled before it is
+    # started — running the TypeScript sources with tsx in production is what
+    # produced "Cannot find module @cgi/core/dist/index.js".
+    buildCommand: npm ci && npm run build -w @cgi/core && npm run build -w @cgi/api
+    startCommand: node apps/api/dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      # Render provides PORT; the API reads it.
+      - key: MONGODB_URI
+        sync: false          # set in the dashboard — never in the repository
+      - key: MONGODB_DB
+        value: care_governance
+      - key: SESSION_SECRET
+        generateValue: true  # Render generates and stores it
+      - key: WEB_ORIGIN
+        sync: false          # the Vercel URL, e.g. https://your-app.vercel.app
+      - key: MAX_UPLOAD_BYTES
+        value: "5242880"
+      - key: LOG_LEVEL
+        value: info
+      # Evidence files live on the disk mounted below. Without this they are
+      # written to the instance filesystem, which is wiped on every deploy.
+      - key: STORAGE_DIR
+        value: /var/data/evidence
+      # Malware scanning. The API refuses to start in production on the
+      # placeholder scanner unless the risk is accepted deliberately, so this
+      # has to be set by hand:
+      #   CLAMAV_HOST=<host of a clamd instance>   (what production wants)
+      #   SCANNER=heuristic-accepted-risk          (accepting the placeholder)
+      - key: SCANNER
+        sync: false
+    disk:
+      name: evidence
+      mountPath: /var/data
+      sizeGB: 5

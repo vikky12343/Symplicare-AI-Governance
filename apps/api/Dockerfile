@@ -10,14 +10,18 @@ COPY package.json package-lock.json ./
 COPY packages/core/package.json packages/core/
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
-RUN npm ci
+# --ignore-scripts because the workspace sources are not in the image yet:
+# @cgi/core's prepare hook compiles them, and it runs explicitly below once
+# they have been copied in.
+RUN npm ci --ignore-scripts
 
 COPY packages/core packages/core
 COPY apps/api apps/api
 RUN npm run build -w @cgi/core && npm run build -w @cgi/api
 
-# Reinstall without dev dependencies for the runtime layer.
-RUN npm ci --omit=dev
+# Reinstall without dev dependencies for the runtime layer. Scripts stay off:
+# the compiled output is already on disk and TypeScript is about to go away.
+RUN npm ci --omit=dev --ignore-scripts
 
 FROM node:22-alpine AS runtime
 WORKDIR /app
