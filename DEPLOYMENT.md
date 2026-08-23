@@ -1,20 +1,25 @@
 # Deploying Symplicare AI
 
-Two hosts, because the two halves need different things. The web app is static
-files and belongs on a CDN. The API is a long-lived Node process with a
-database, uploads on disk and sessions held in memory between two requests —
-it needs a server.
+Two pieces, because they need different things. The web app is static files and
+belongs on a CDN. The API is a long-lived Node process with a database, uploads
+on disk and sessions held between two requests — it needs a server.
 
 ```
-browser ──▶ Vercel (web app)  ──/api/*──▶  Render (API)  ──▶  MongoDB Atlas
+browser ──▶ web app (static) ──/api/*──▶ API (Node) ──▶ MongoDB Atlas
 ```
 
-Every `/api` call goes through Vercel's rewrite rather than straight to Render.
-That is not decoration: the session cookie is `sameSite: strict`, so a browser
-will only send it back to the origin that set it. Point the web app directly at
-the Render hostname and nobody stays signed in.
+**The API goes on Render.** The web app can go on Render too, as a static site,
+or on Vercel — pick one, section 3 covers both. Everything on Render is the
+simpler answer: one dashboard, one bill, one place to look when something
+breaks.
 
-Do it in this order. Render first, because Vercel needs the API's URL.
+Whichever you pick, every `/api` call goes through the site's own origin via a
+rewrite, never straight to the API hostname. That is not decoration: the
+session cookie is `sameSite: strict`, so a browser will only send it back to
+the origin that set it. Point the web app at the API's hostname directly and
+sign-in appears to work, then every page says you are signed out.
+
+Do it in this order. The API first, because the web app needs its URL.
 
 ---
 
@@ -80,7 +85,7 @@ Render → your service → **Environment**. Copy the left column exactly.
 | `MONGODB_URI` | *by hand* — your Atlas string. Copy the `MONGODB_URI=` line out of `apps/api/.env`, or take a fresh one from Atlas → Connect → Drivers |
 | `MONGODB_DB` | `care_governance` |
 | `SESSION_SECRET` | *by hand* — generate one, see below |
-| `WEB_ORIGIN` | *by hand* — your Vercel URL. Fill this in at step 4, once you have it |
+| `WEB_ORIGIN` | *by hand* — the web app's URL. Fill this in at step 4, once you have it |
 | `MAX_UPLOAD_BYTES` | `5242880` |
 | `LOG_LEVEL` | `info` |
 | `STORAGE_DIR` | `/var/data/evidence` |
@@ -119,7 +124,42 @@ unset and treat evidence uploads as temporary until you upgrade.
 
 ---
 
-## 3. Vercel — the web app
+## 3. The web app
+
+Pick one of the two. Both serve the same files; both proxy `/api` to the API.
+
+### Option A: Render (static site)
+
+If you deployed with the blueprint, this service already exists — it is in
+`render.yaml` alongside the API. Otherwise, **New → Static Site**, connect the
+same repository, then:
+
+| Field | Value |
+| --- | --- |
+| Branch | `main` |
+| Root Directory | *leave empty* |
+| Build Command | `npm ci && npm run build -w @cgi/core && npm run build -w @cgi/web` |
+| Publish Directory | `apps/web/dist` |
+
+Add one environment variable, `NODE_VERSION` = `22`.
+
+Then **Redirects/Rewrites**, in this order — the first match wins, so the API
+rule has to come first or every `/api` call is answered with the application's
+own `index.html`:
+
+| Source | Destination | Action |
+| --- | --- | --- |
+| `/api/*` | `https://symplicare-api.onrender.com/api/*` | Rewrite |
+| `/*` | `/index.html` | Rewrite |
+
+Replace that hostname with your API service's actual address. The second rule
+is what makes client-side routing work: without it, opening
+`/dashboard` directly returns a 404 instead of the app.
+
+There is nothing else to set. The web app holds no secrets — it talks to
+`/api` on its own origin and the browser holds the session cookie.
+
+### Option B: Vercel
 
 The repository contains `vercel.json`, so there is nothing to configure by
 hand. In the project settings, check:
@@ -149,24 +189,33 @@ You now have two URLs. Say they are:
 
 ```
 API   https://symplicare-api.onrender.com
-Web   https://symplicare-ai-governance.vercel.app
+Web   https://symplicare-web.onrender.com          (or …vercel.app)
 ```
 
-**a. Tell the API which site may call it.** Render → Environment →
+**a. Tell the API which site may call it.** Render → *symplicare-api* →
+Environment →
 
 ```
-WEB_ORIGIN = https://symplicare-ai-governance.vercel.app
+WEB_ORIGIN = https://symplicare-web.onrender.com
 ```
 
-CORS refuses everything else. Vercel preview deployments get their own
-hostnames, so add them comma-separated if you want previews to work:
+CORS refuses every other origin. Scheme included, no trailing slash. If you
+also want Vercel preview deployments to work, list them comma-separated:
 
 ```
-WEB_ORIGIN = https://symplicare-ai-governance.vercel.app,https://symplicare-ai-governance-git-main-vikky.vercel.app
+WEB_ORIGIN = https://symplicare-web.onrender.com,https://symplicare-ai-governance.vercel.app
 ```
 
-**b. Tell the site where the API is.** Edit `vercel.json` — the API rewrite goes
-*above* the SPA fallback, because the first match wins:
+**b. Tell the site where the API is.**
+
+*On Render:* the static site → **Redirects/Rewrites** → the `/api/*` rule →
+set the destination to `https://symplicare-api.onrender.com/api/*`. Save, then
+redeploy the static site. (If you used the blueprint, edit the destination in
+`render.yaml` and push instead — that keeps the file and the dashboard
+agreeing.)
+
+*On Vercel:* edit `vercel.json`, with the API rule **above** the SPA fallback
+because the first match wins:
 
 ```json
   "rewrites": [
@@ -175,11 +224,11 @@ WEB_ORIGIN = https://symplicare-ai-governance.vercel.app,https://symplicare-ai-g
   ]
 ```
 
-Commit and push; Vercel redeploys on its own.
-
 ```bash
 git add vercel.json && git commit -m "Point the API rewrite at Render" && git push
 ```
+
+Vercel redeploys on the push.
 
 ---
 
@@ -190,11 +239,15 @@ curl https://symplicare-api.onrender.com/api/health
 ```
 
 ```bash
-curl https://symplicare-ai-governance.vercel.app/api/health
+curl https://symplicare-web.onrender.com/api/health
 ```
 
 Both must return the same JSON. The first proves the API is up; the second
 proves the rewrite reaches it, which is the half that actually matters.
+
+Then open the site itself and reload on a deep link — `/dashboard`, say. A 404
+there means the catch-all rewrite to `index.html` is missing or is sitting
+above the `/api` rule.
 
 Then open the site, create an account, and complete onboarding. There is a
 sample sheet to upload in `samples/` — generate one for your care home's code
@@ -214,7 +267,9 @@ node scripts/make-sample-upload.mjs --code YOUR-HOME-CODE --name "Your Home"
 | Build fails with dozens of `TS2307` / implicit `any` | The same thing, at compile time. Every one of those errors is downstream of the missing core package. |
 | `Failed to start` with `MongooseServerSelectionError` | Atlas is refusing the connection. Section 1. |
 | API starts, then exits complaining about the scanner | `SCANNER` / `CLAMAV_HOST` is unset. Section 2. |
-| Site loads, sign-in says the API is not running | The Vercel rewrite is missing or points at the wrong host. Section 4b. |
+| Site loads, sign-in says the API is not running | The `/api` rewrite is missing or points at the wrong host. Section 4b. |
+| `/dashboard` reloads to a 404, but the site works from the home page | The catch-all rewrite to `/index.html` is missing. Section 3. |
+| Every `/api` call returns the page's own HTML | The catch-all is matching first. The `/api` rule must be above it. |
 | Sign-in succeeds, then every page says signed out | The session cookie is being dropped. The site must call `/api` on its own origin through the rewrite — never the Render hostname directly. |
 | CORS errors in the browser console | `WEB_ORIGIN` does not match the site's hostname exactly, scheme included. |
 | First request after a quiet period takes ~30s | A free Render instance sleeping. Upgrade the instance, or live with it. |

@@ -1,9 +1,13 @@
-# Render blueprint for the API.
+# Render blueprint: the API and the web app.
 #
-# The web app is served from Vercel (see vercel.json); this is the other half.
 # Point Render at this file — Blueprints → New Blueprint Instance — rather than
 # filling the fields in by hand, so the build and start commands cannot drift
 # apart from the repository.
+#
+# The web app can be served from Vercel instead (see vercel.json); the two are
+# alternatives, not a pair. Whichever serves it, the browser must reach the API
+# through /api on the site's own origin: the session cookie is sameSite=strict,
+# so a browser will only return it to the origin that set it.
 services:
   - type: web
     name: symplicare-api
@@ -51,3 +55,30 @@ services:
       name: evidence
       mountPath: /var/data
       sizeGB: 5
+
+  # ── The web app ────────────────────────────────────────────────
+  # Static files, so there is no server to pay for and no runtime to patch.
+  - type: web
+    name: symplicare-web
+    runtime: static
+    region: frankfurt
+    branch: main
+    buildCommand: npm ci && npm run build -w @cgi/core && npm run build -w @cgi/web
+    staticPublishPath: apps/web/dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+    routes:
+      # Order matters — the first match wins, so the API proxy has to come
+      # before the catch-all or every /api call would be answered with the
+      # application's own index.html.
+      #
+      # REPLACE the destination host with the API service's URL once it has
+      # one: Render dashboard → symplicare-api → the address under its name.
+      - type: rewrite
+        source: /api/*
+        destination: https://symplicare-api.onrender.com/api/*
+      # Client-side routing: every other path is the single page.
+      - type: rewrite
+        source: /*
+        destination: /index.html
